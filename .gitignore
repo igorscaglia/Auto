@@ -1,0 +1,9 @@
+
+.vs
+*.docx
+*.sln
+*.tmp
+Auto.VehicleCatalog.API/bin
+Auto.VehicleCatalog.API/obj
+Auto.VehicleCatalog.API.Tests/bin
+Auto.VehicleCatalog.API.Tests/obj
