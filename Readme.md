@@ -5,7 +5,8 @@ It's worth mentioning that it uses ASP.NET Core Identity for manager authenticat
 
 ### What will you need to run the application?
 
-[.NET Core 3.1 Runtime](https://www.microsoft.com/net/core)
+[.NET Core 3.1 Runtime](https://dotnet.microsoft.com/download)
+
 [MySql Server](https://dev.mysql.com/downloads/mysql/)
 
 ### After downloading the source, what should you do?
