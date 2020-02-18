@@ -29,7 +29,7 @@ It's worth mentioning that it uses ASP.NET Core Identity for manager authenticat
  
 - If you want to debug the application, just choose 'Docker .NET Core Launch' and click 'Start Debugging' in 'Run and Debug' window.
  
-- After that, all Readme.md instructions in master branch are valid.
+- After that, all Readme.md instructions in master branch remain valid.
 
 License
 ----
