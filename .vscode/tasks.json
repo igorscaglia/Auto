@@ -2,11 +2,42 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "build",
+            "label": "build debug",
             "command": "dotnet",
             "type": "process",
             "args": [
                 "build",
+                "${workspaceFolder}/Auto.VehicleCatalog.API/Auto.VehicleCatalog.API.csproj",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:Summary",
+                "-c",
+                "Debug"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+
+        {
+            "label": "build release",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build",
+                "${workspaceFolder}/Auto.VehicleCatalog.API/Auto.VehicleCatalog.API.csproj",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:Summary",
+                "-c",
+                "Release"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+
+        {
+            "label": "watch",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "watch",
+                "run",
                 "${workspaceFolder}/Auto.VehicleCatalog.API/Auto.VehicleCatalog.API.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
@@ -26,17 +57,112 @@
             "problemMatcher": "$msCompile"
         },
         {
-            "label": "watch",
-            "command": "dotnet",
-            "type": "process",
+            "label": "docker run MySql 8.0.19",
+            "command": "docker",
+            "type": "shell",
             "args": [
-                "watch",
                 "run",
-                "${workspaceFolder}/Auto.VehicleCatalog.API/Auto.VehicleCatalog.API.csproj",
-                "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary"
+                "-d",
+                "--rm",
+                "--name",
+                "mysql8019",
+                "-p",
+                "3306:3306",
+                "-v",
+                "mysql8019prod:/var/lib/mysql",
+                "-e",
+                "MYSQL_ROOT_PASSWORD=M1yS2q3l4",
+                "-e",
+                "bind-address=0.0.0.0",
+                "mysql:8.0.19"
             ],
             "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "docker-build: debug",
+            "type": "docker-build",
+            "dependsOn": [
+                "build debug"
+            ],
+            "dockerBuild": {
+                "tag": "auto.vehiclecatalog.api:dev",
+                "target": "base",
+                "dockerfile": "${workspaceFolder}/Auto.VehicleCatalog.API/Dockerfile",
+                "context": "${workspaceFolder}",
+                "pull": true
+            },
+            "netCore": {
+                "appProject": "${workspaceFolder}/Auto.VehicleCatalog.API/Auto.VehicleCatalog.API.csproj"
+            }
+        },
+        {
+            "label": "docker-build: release",
+            "type": "docker-build",
+            "dependsOn": [
+                "build release"
+            ],
+            "dockerBuild": {
+                "tag": "auto.vehiclecatalog.api:latest",
+                "dockerfile": "${workspaceFolder}/Auto.VehicleCatalog.API/Dockerfile",
+                "context": "${workspaceFolder}",
+                "pull": true
+            },
+            "netCore": {
+                "appProject": "${workspaceFolder}/Auto.VehicleCatalog.API/Auto.VehicleCatalog.API.csproj"
+            }
+        },
+        {
+            "label": "docker-run: debug",
+            "type": "docker-run",
+            "dependsOn": [
+                "docker-build: debug"
+            ],
+            "dockerRun": {
+                "containerName": "autoDev",
+                "ports": [
+                    {
+                        "containerPort": 5003,
+                        "hostPort": 3001
+                    }
+                ],
+                "env": {
+                    "ASPNETCORE_ENVIRONMENT": "Development",
+                    "DBHOST": "172.17.0.2",
+                    "DBPORT": "3306",
+                    "DBPASS": "M1yS2q3l4",
+                    "DBVER": "8.0.19"
+                }
+            },
+            "netCore": {
+                "appProject": "${workspaceFolder}/Auto.VehicleCatalog.API/Auto.VehicleCatalog.API.csproj",
+                "enableDebugging": true
+            }
+        },
+        {
+            "label": "docker-run: release",
+            "type": "docker-run",
+            "dependsOn": [
+                "docker-build: release"
+            ],
+            "dockerRun": {
+                "containerName": "autoProd",
+                "ports": [
+                    {
+                        "containerPort": 5003,
+                        "hostPort": 3005
+                    }
+                ],
+                "env": {
+                    "ASPNETCORE_ENVIRONMENT": "Production",
+                    "DBHOST": "172.17.0.2",
+                    "DBPORT": "3306",
+                    "DBPASS": "M1yS2q3l4",
+                    "DBVER": "8.0.19"
+                }
+            },
+            "netCore": {
+                "appProject": "${workspaceFolder}/Auto.VehicleCatalog.API/Auto.VehicleCatalog.API.csproj"
+            }
         }
     ]
 }

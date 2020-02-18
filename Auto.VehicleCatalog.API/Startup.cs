@@ -18,6 +18,9 @@ using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Pomelo.EntityFrameworkCore.MySql.Storage;
+using System.Net;
+using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Http;
 
 namespace Auto.VehicleCatalog.API
 {
@@ -87,12 +90,12 @@ namespace Auto.VehicleCatalog.API
                 // Enable authorization by default only for administrators
                 var policy = new AuthorizationPolicyBuilder()
                     .RequireAuthenticatedUser()
-                    .RequireRole(new [] { "admin" })
+                    .RequireRole(new[] { "admin" })
                     .Build();
 
-                    options.Filters.Add(new AuthorizeFilter(policy));
+                options.Filters.Add(new AuthorizeFilter(policy));
             })
-            .AddNewtonsoftJson(options => 
+            .AddNewtonsoftJson(options =>
             {
                 // Enable NewtonsoftJson features
                 options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
@@ -181,6 +184,8 @@ namespace Auto.VehicleCatalog.API
             {
                 using (var scope = app.ApplicationServices.CreateScope())
                 {
+                    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
                     try
                     {
                         // Get all by DI
@@ -194,12 +199,17 @@ namespace Auto.VehicleCatalog.API
                         // Just seeding if we are in development mode
                         if (env.IsDevelopment())
                         {
+                            logger.LogInformation("Development mode on. Seeding database...");
+
                             Setup.SeedDatabase.SeedDomain(context, userManager, roleManager);
+                        }
+                        else
+                        {
+                            logger.LogInformation("Application is not in Development mode");
                         }
                     }
                     catch (System.Exception ex)
                     {
-                        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
                         logger.LogError(ex, "Error configuring DataContext");
                     }
                 }
@@ -207,10 +217,40 @@ namespace Auto.VehicleCatalog.API
 
             ConfigureDataContext();
 
-            if (env.IsDevelopment())
+            void ConfigureExceptionHandling()
             {
-                app.UseDeveloperExceptionPage();
+                if (env.IsDevelopment())
+                {
+                    app.UseDeveloperExceptionPage();
+                }
+                else
+                {
+                    // If happens any unhandler exception error we gonna put it in header and body response
+                    app.UseExceptionHandler(builder =>
+                    {
+                        builder.Run(async httpContext =>
+                        {
+                            // Set 500 generic error
+                            httpContext.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+
+                            var error = httpContext.Features.Get<IExceptionHandlerFeature>();
+                            if (error != null)
+                            {
+                                httpContext.Response.Headers.Add("Application-Error", error.Error.Message);
+                                httpContext.Response.Headers.Add("Access-Control-Expose-Headers", "Application-Error");
+                                
+                                // CORS must to be set manually
+                                httpContext.Response.Headers.Add("Access-Control-Allow-Origin", "*");
+                                
+                                // Write error on response
+                                await httpContext.Response.WriteAsync(error.Error.Message);
+                            }
+                        });
+                    });
+                }
             }
+
+            ConfigureExceptionHandling();
 
             // Enable middleware to serve generated Swagger as a JSON endpoint.
             app.UseSwagger();
