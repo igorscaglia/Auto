@@ -266,12 +266,12 @@ namespace Auto.VehicleCatalog.API
             });
 
             app.UseRouting();
+            
+            // Enable CORS
+            app.UseCors(x => x.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 
             app.UseAuthentication();
             app.UseAuthorization();
-
-            // Enable CORS
-            app.UseCors(x => x.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 
             app.UseEndpoints(endpoints =>
             {
